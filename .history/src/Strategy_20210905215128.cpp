@@ -445,7 +445,6 @@ void Strategy::BallPossessionAnalyse()
 		}
 	}
 
-	// call set play analyse for final analysis?
 	SetPlayAnalyse(); //最后分析，作为修正
 }
 

@@ -278,7 +278,7 @@ void Strategy::BallPossessionAnalyse()
 			mBallInterPos = ball.GetPredictedPos(mMyInterCycle);
 		}
 	}
-	// if current player CAN (not 100%?) intercept ball fastest
+	// if current player can intercept ball fastest
 	else if( /*mMyInterCycle < mBallOutCycle + 2 &&*/ mMyInterCycle <= mSureInterCycle ){ //自己是最快截到球的人
 		// set ball controller to current player
 		mController = self.GetUnum();
@@ -319,7 +319,6 @@ void Strategy::BallPossessionAnalyse()
 			}
 		}
 
-		// if controller is current player then calculate predicted ball interception position from current player's intercept cycle
 		if (mController == mSelfState.GetUnum()) {
 			if (pMyInfo != itr_NULL){
 				mBallInterPos = ball.GetPredictedPos(mMyInterCycle);
@@ -328,33 +327,26 @@ void Strategy::BallPossessionAnalyse()
 				PRINT_ERROR("bug here?");
 			}
 		}
-		// else set to sure teammate
 		else {
 			mBallInterPos = ball.GetPredictedPos(mSureTmInterCycle);
 			mController = mSureTm;
 		}
 	}
-	// if player cant get the ball, see teammates' conditions
 	else {//自己拿不到球了,看看队友如何
-		// if sure teammate is available then set controller to teammate
 		if(pTmInfo != itr_NULL && mSureTmInterCycle <= mSureInterCycle){//有可能拿到
 			mBallInterPos = ball.GetPredictedPos(mSureTmInterCycle);
 			mController = mSureTm;
 		}
-		// else if there are no teammates available
 		else {
-			// if opponent is available, set controller to opponent
 			if(pOppInfo != itr_NULL){
 				mBallInterPos = ball.GetPredictedPos(mSureOppInterCycle);
 				mController = -mSureOpp;
 			}
 			else {
-				// if ball is out of field? (maybe no one is controlling the ball) then it is free, controller = 0
 				if (mMinIntercCycle > mBallOutCycle + 5) { //because ball will be out of field
 					mBallInterPos = ball.GetPredictedPos(mBallOutCycle);
 					mController = 0;
 				}
-				// else set controller to current player???
 				else {
 					mController = mSelfState.GetUnum();
 					mBallInterPos = ball.GetPredictedPos(mMyInterCycle);
@@ -363,13 +355,11 @@ void Strategy::BallPossessionAnalyse()
 		}
 	}
 
-	// set kickable player to teammate or opponent or 0
 	int kickable_player = mInfoState.GetPositionInfo().GetTeammateWithBall(); //这里没有考虑buffer
 	if (kickable_player == 0){
 		kickable_player = -mInfoState.GetPositionInfo().GetOpponentWithBall(); //这里没有考虑buffer
 	}
 
-	//if there is an available kickable player then set controller to that player
 	if (kickable_player != 0) {
 		mController = kickable_player;
 		mIsBallFree = false;
@@ -380,13 +370,6 @@ void Strategy::BallPossessionAnalyse()
 	//先判断能踢到球的队员
 	//过程:看能踢到球的自己人有几个,多于一个按规则决定是谁踢,得到是否自己可以踢球,存为_pMem->ball_kickable
 	//规则:球离谁基本战位点谁踢
-
-	//The following judges the possible kicking situation
-	//First judge the player who can get the ball
-	//Process: See how many people can play the ball, more than one will decide who is playing according to the rules, and get whether they can play the ball, save it as _pMem->ball_kickable
-	//Rules: Who kicks the ball from the base position 
-
-	// if current player is kickabl
     if (self.IsKickable()){
 		mController = self.GetUnum();
 		mIsBallFree = false;
@@ -398,37 +381,27 @@ void Strategy::BallPossessionAnalyse()
 		mBallInterPos = ball.GetPos();
 		mBallFreeCycleLeft = 0;
 		mIsBallActuralKickable = true;
-		// ball challenger, in this case maybe the opponent with the ball
 		mChallenger = mInfoState.GetPositionInfo().GetOpponentWithBall();
 
-		// if current player is not goalkeeper
 		if (!mSelfState.IsGoalie()) {
-			// square of distance between player's position in formation to the ball?
 			double self_pt_dis = mAgent.GetFormation().GetTeammateFormationPoint(self.GetUnum(), ball.GetPos()).Dist2(ball.GetPos());
 
-			// for loop players near the ball
 			for(unsigned int i = 0; i < p2b.size(); ++i){
 				Unum unum = p2b[i];
-				// if teammate and not current player
 				if(unum > 0 && unum != self.GetUnum()){
-					// if teammate kickable
 					if (mWorldState.GetPlayer(unum).IsKickable()){
-						// if in play on mode and teammate is goalie
 						if(mWorldState.GetPlayMode() != PM_Play_On && mWorldState.GetPlayer(unum).IsGoalie()/*&& unum == PlayerParam::instance().ourGoalieUnum()*/){
-							// if ball is in control of goalkeeper, set self's kickable to false
 							mAgent.Self().UpdateKickable(false); //非playon时如果守门员可踢把自己强行设置成不可踢
 							mController = unum;
 							break;
 						}
 						double tm_pt_dis = mAgent.GetFormation().GetTeammateFormationPoint(unum, ball.GetPos()).Dist2(ball.GetPos());
-						// if teammate distance < self distance, set self kickable to false and break
 						if(tm_pt_dis < self_pt_dis){
 							mAgent.Self().UpdateKickable(false);
 							mController = unum;
 							break;
 						}
 					}
-					// if other teammates cannot kick
 					else { //可以认为其他人踢不到了
 						break;
 					}
@@ -436,16 +409,13 @@ void Strategy::BallPossessionAnalyse()
 			}
 		}
 	}
-	// if current player is not kickable and there are others that are kickable
 	else if (kickable_player != 0 && kickable_player != self.GetUnum()){ //自己踢不到球,但有人可以
 		mIsBallFree = false;
-		// if teammate is kickable then set challenger to opponent with ball?
 		if (kickable_player > 0){ //自己人可踢
 			mChallenger = mInfoState.GetPositionInfo().GetOpponentWithBall();
 		}
 	}
 
-	// call set play analyse for final analysis?
 	SetPlayAnalyse(); //最后分析，作为修正
 }
 

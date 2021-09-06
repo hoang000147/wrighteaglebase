@@ -363,13 +363,11 @@ void Strategy::BallPossessionAnalyse()
 		}
 	}
 
-	// set kickable player to teammate or opponent or 0
 	int kickable_player = mInfoState.GetPositionInfo().GetTeammateWithBall(); //这里没有考虑buffer
 	if (kickable_player == 0){
 		kickable_player = -mInfoState.GetPositionInfo().GetOpponentWithBall(); //这里没有考虑buffer
 	}
 
-	//if there is an available kickable player then set controller to that player
 	if (kickable_player != 0) {
 		mController = kickable_player;
 		mIsBallFree = false;
@@ -380,13 +378,6 @@ void Strategy::BallPossessionAnalyse()
 	//先判断能踢到球的队员
 	//过程:看能踢到球的自己人有几个,多于一个按规则决定是谁踢,得到是否自己可以踢球,存为_pMem->ball_kickable
 	//规则:球离谁基本战位点谁踢
-
-	//The following judges the possible kicking situation
-	//First judge the player who can get the ball
-	//Process: See how many people can play the ball, more than one will decide who is playing according to the rules, and get whether they can play the ball, save it as _pMem->ball_kickable
-	//Rules: Who kicks the ball from the base position 
-
-	// if current player is kickabl
     if (self.IsKickable()){
 		mController = self.GetUnum();
 		mIsBallFree = false;
@@ -398,37 +389,27 @@ void Strategy::BallPossessionAnalyse()
 		mBallInterPos = ball.GetPos();
 		mBallFreeCycleLeft = 0;
 		mIsBallActuralKickable = true;
-		// ball challenger, in this case maybe the opponent with the ball
 		mChallenger = mInfoState.GetPositionInfo().GetOpponentWithBall();
 
-		// if current player is not goalkeeper
 		if (!mSelfState.IsGoalie()) {
-			// square of distance between player's position in formation to the ball?
 			double self_pt_dis = mAgent.GetFormation().GetTeammateFormationPoint(self.GetUnum(), ball.GetPos()).Dist2(ball.GetPos());
 
-			// for loop players near the ball
 			for(unsigned int i = 0; i < p2b.size(); ++i){
 				Unum unum = p2b[i];
-				// if teammate and not current player
 				if(unum > 0 && unum != self.GetUnum()){
-					// if teammate kickable
 					if (mWorldState.GetPlayer(unum).IsKickable()){
-						// if in play on mode and teammate is goalie
 						if(mWorldState.GetPlayMode() != PM_Play_On && mWorldState.GetPlayer(unum).IsGoalie()/*&& unum == PlayerParam::instance().ourGoalieUnum()*/){
-							// if ball is in control of goalkeeper, set self's kickable to false
 							mAgent.Self().UpdateKickable(false); //非playon时如果守门员可踢把自己强行设置成不可踢
 							mController = unum;
 							break;
 						}
 						double tm_pt_dis = mAgent.GetFormation().GetTeammateFormationPoint(unum, ball.GetPos()).Dist2(ball.GetPos());
-						// if teammate distance < self distance, set self kickable to false and break
 						if(tm_pt_dis < self_pt_dis){
 							mAgent.Self().UpdateKickable(false);
 							mController = unum;
 							break;
 						}
 					}
-					// if other teammates cannot kick
 					else { //可以认为其他人踢不到了
 						break;
 					}
@@ -436,16 +417,13 @@ void Strategy::BallPossessionAnalyse()
 			}
 		}
 	}
-	// if current player is not kickable and there are others that are kickable
 	else if (kickable_player != 0 && kickable_player != self.GetUnum()){ //自己踢不到球,但有人可以
 		mIsBallFree = false;
-		// if teammate is kickable then set challenger to opponent with ball?
 		if (kickable_player > 0){ //自己人可踢
 			mChallenger = mInfoState.GetPositionInfo().GetOpponentWithBall();
 		}
 	}
 
-	// call set play analyse for final analysis?
 	SetPlayAnalyse(); //最后分析，作为修正
 }
 

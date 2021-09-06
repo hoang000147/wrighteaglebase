@@ -211,20 +211,15 @@ void WorldStateUpdater::UpdateActionInfo()
 		// calculate ball to player
 		Vector ball_2_player = (ball_pos - player.GetPos()).Rotate(-player.GetBodyDir());
 
-		// if player do nothing and [distance between ball to player] < [player's kickable area - 0.04 * (1 or -1)]
 		if (!player.IsIdling() && ball_2_player.Mod() < player.GetKickableArea() - KICKABLE_BUFFER * Sign(player.GetUnum())) {
-			// update player kickable to true
 			player.UpdateKickable(true);
-			// update kick rate = calculated kick rate from ball to player distance and player type
 			player.UpdateKickRate(GetKickRate(ball_2_player, player.GetPlayerType()));
 		}
 		else {
-			// player cannot kick
 			player.UpdateKickable(false);
 			player.UpdateKickRate(0.0);
 		}
 
-		// see if player can catch the ball - only goalkepper can
 		player.UpdateBallCatchable(false);
 		if (player.GetUnum() == mpWorldState->GetTeammateGoalieUnum() || player.GetUnum() == -mpWorldState->GetOpponentGoalieUnum()) {
 			if ((mpWorldState->GetPlayMode() == PM_Play_On || mpWorldState->GetPlayMode() == PM_Opp_Penalty_Taken) && ball_2_player.Mod() < ServerParam::instance().maxCatchableArea()  - CATCHABLE_BUFFER) {
@@ -241,12 +236,10 @@ void WorldStateUpdater::UpdateActionInfo()
 			}
 		}
 
-		// update player max turn angle base on player type and player velocity (in number, not vector)
 		player.UpdateMaxTurnAngle(GetMaxTurnAngle(player.GetPlayerType(), player.GetVel().Mod()));
 	}
 
 	for (unsigned i = 0; i < mpWorldState->GetPlayerList().size(); ++i) { //这里要等到可踢信息更新完才能更新
-		// if player not alive then skip this player
 		PlayerState & player = const_cast<PlayerState &>(*mpWorldState->GetPlayerList()[i]);
 		if (!player.IsAlive()) continue;
 

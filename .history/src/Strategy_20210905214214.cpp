@@ -386,7 +386,7 @@ void Strategy::BallPossessionAnalyse()
 	//Process: See how many people can play the ball, more than one will decide who is playing according to the rules, and get whether they can play the ball, save it as _pMem->ball_kickable
 	//Rules: Who kicks the ball from the base position 
 
-	// if current player is kickabl
+	// if current player is kickable
     if (self.IsKickable()){
 		mController = self.GetUnum();
 		mIsBallFree = false;
@@ -406,29 +406,22 @@ void Strategy::BallPossessionAnalyse()
 			// square of distance between player's position in formation to the ball?
 			double self_pt_dis = mAgent.GetFormation().GetTeammateFormationPoint(self.GetUnum(), ball.GetPos()).Dist2(ball.GetPos());
 
-			// for loop players near the ball
 			for(unsigned int i = 0; i < p2b.size(); ++i){
 				Unum unum = p2b[i];
-				// if teammate and not current player
 				if(unum > 0 && unum != self.GetUnum()){
-					// if teammate kickable
 					if (mWorldState.GetPlayer(unum).IsKickable()){
-						// if in play on mode and teammate is goalie
 						if(mWorldState.GetPlayMode() != PM_Play_On && mWorldState.GetPlayer(unum).IsGoalie()/*&& unum == PlayerParam::instance().ourGoalieUnum()*/){
-							// if ball is in control of goalkeeper, set self's kickable to false
 							mAgent.Self().UpdateKickable(false); //非playon时如果守门员可踢把自己强行设置成不可踢
 							mController = unum;
 							break;
 						}
 						double tm_pt_dis = mAgent.GetFormation().GetTeammateFormationPoint(unum, ball.GetPos()).Dist2(ball.GetPos());
-						// if teammate distance < self distance, set self kickable to false and break
 						if(tm_pt_dis < self_pt_dis){
 							mAgent.Self().UpdateKickable(false);
 							mController = unum;
 							break;
 						}
 					}
-					// if other teammates cannot kick
 					else { //可以认为其他人踢不到了
 						break;
 					}
@@ -436,16 +429,13 @@ void Strategy::BallPossessionAnalyse()
 			}
 		}
 	}
-	// if current player is not kickable and there are others that are kickable
 	else if (kickable_player != 0 && kickable_player != self.GetUnum()){ //自己踢不到球,但有人可以
 		mIsBallFree = false;
-		// if teammate is kickable then set challenger to opponent with ball?
 		if (kickable_player > 0){ //自己人可踢
 			mChallenger = mInfoState.GetPositionInfo().GetOpponentWithBall();
 		}
 	}
 
-	// call set play analyse for final analysis?
 	SetPlayAnalyse(); //最后分析，作为修正
 }
 

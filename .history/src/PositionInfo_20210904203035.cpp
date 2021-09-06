@@ -346,7 +346,6 @@ vector<Unum> PositionInfo::GetClosePlayerToPoint(const Vector & bp, const Unum &
 	vector< pair<Unum, double> > tmp;
 
 	for (vector<PlayerState*>::const_iterator it = mpWorldState->GetPlayerList().begin(); it != mpWorldState->GetPlayerList().end(); ++it){
-		// if player is alive and ???
         if ((*it)->IsAlive() && (*it)->GetPosConf() > FLOAT_EPS && (*it)->GetUnum() != exclude_unum){ // 算距离自己的球员时把自己排除掉
 			tmp.push_back(pair<Unum, double>((*it)->GetUnum(), (*it)->GetPos().Dist2(bp)));
 		}

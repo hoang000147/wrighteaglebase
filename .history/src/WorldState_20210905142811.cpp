@@ -246,7 +246,6 @@ void WorldStateUpdater::UpdateActionInfo()
 	}
 
 	for (unsigned i = 0; i < mpWorldState->GetPlayerList().size(); ++i) { //这里要等到可踢信息更新完才能更新
-		// if player not alive then skip this player
 		PlayerState & player = const_cast<PlayerState &>(*mpWorldState->GetPlayerList()[i]);
 		if (!player.IsAlive()) continue;
 

@@ -436,16 +436,13 @@ void Strategy::BallPossessionAnalyse()
 			}
 		}
 	}
-	// if current player is not kickable and there are others that are kickable
 	else if (kickable_player != 0 && kickable_player != self.GetUnum()){ //自己踢不到球,但有人可以
 		mIsBallFree = false;
-		// if teammate is kickable then set challenger to opponent with ball?
 		if (kickable_player > 0){ //自己人可踢
 			mChallenger = mInfoState.GetPositionInfo().GetOpponentWithBall();
 		}
 	}
 
-	// call set play analyse for final analysis?
 	SetPlayAnalyse(); //最后分析，作为修正
 }
 
