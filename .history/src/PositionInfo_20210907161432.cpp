@@ -131,7 +131,8 @@ const double & PositionInfo::GetPlayerDistToPlayer(Unum unum1, Unum unum2) const
 * in the opponent half of the field,
 * closer to the opponent goal than at least two defending players,
 * closer to the opponent goal than the ball,
-* closer to the ball than 2.5 meters (this can be changed with the server parameter offside active area size).
+* closer to the ball than 2.5 meters (this can be changed with the server parameter
+offside active area size).
 */
 void PositionInfo::UpdateOffsideLine()
 {
@@ -175,8 +176,7 @@ void PositionInfo::UpdateOffsideLine()
 		}
 	}
 
-	// if ball is behind second last opponent, set offside line to ball position
-	// because of the rules, player cannot be closer to the goal than the ball to the goal
+	// if ball is behind second last opponent (why second?), set offside line to ball position
 	if (ball_state.GetPosConf() > PlayerParam::instance().minValidConf() &&
 			ball_state.GetPos().X() > second)
 	{
@@ -185,7 +185,7 @@ void PositionInfo::UpdateOffsideLine()
 		mTeammateOffsideLineConf    = ball_state.GetPosConf();
 		mTeammateOffsideLineSpeed   = ball_state.GetVel().X();
 	}
-	// else set offside line to second last player
+	// else set offside line to second? (why not first)
 	else
 	{
 		mTeammateOffsideLine        = second;
@@ -205,7 +205,7 @@ void PositionInfo::UpdateOffsideLine()
 		}
 	}
 
-	// opponent offside line, similar to teammate offside line
+	// opponent offside line
 	first   = 0.0;
 	second  = 0.0;
 	f_unum  = 0;

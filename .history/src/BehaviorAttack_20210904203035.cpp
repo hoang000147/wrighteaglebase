@@ -50,10 +50,6 @@ BehaviorAttackPlanner::~BehaviorAttackPlanner()
 
 void BehaviorAttackPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 {
-	// if ball can be caught by this player (goalie) 
-	// AND last controller is opponent and
-	// AND last active behavior is not PASS or Dribble then return
-	// because goalkeeper just catch the ball so there is no need and no way to attack at this point
 	if (mSelfState.IsBallCatchable()  && mStrategy.IsLastOppControl() &&(!(mAgent.IsLastActiveBehaviorInActOf(BT_Pass)||mAgent.IsLastActiveBehaviorInActOf(BT_Dribble)))) return;
 
 	BehaviorInterceptPlanner(mAgent).Plan(mActiveBehaviorList);

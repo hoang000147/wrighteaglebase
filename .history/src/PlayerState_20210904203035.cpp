@@ -121,12 +121,6 @@ void PlayerState::GetReverseFrom(const PlayerState & o)
 	UpdateFocusOn(o.GetFocusOnSide(), o.GetFocusOnUnum(), o.GetFocusOnDelay(), o.GetFocusOnConf());
 }
 
-/**
- * predict next position when dashing based on steps, dash_power and dash direction
- * \param steps total dashing steps
- * \param dash_power player's dash power
- * \param dash_dir player's dash direction
-**/
 Vector PlayerState::GetPredictedPosWithDash(int steps, double dash_power, AngleDeg dash_dir) const
 {
 	Simulator::Player self(*this);
@@ -139,12 +133,6 @@ Vector PlayerState::GetPredictedPosWithDash(int steps, double dash_power, AngleD
 	return self.mPos;
 }
 
-/**
- * predict velocity when dashing based on steps, dash_power and dash direction
- * \param steps total dashing steps
- * \param dash_power player's dash power
- * \param dash_dir player's dash direction
-**/
 Vector PlayerState::GetPredictedVelWithDash(int steps, double dash_power, AngleDeg dash_dir) const
 {
 	Simulator::Player self(*this);
@@ -161,7 +149,6 @@ double PlayerState::CorrectDashPowerForStamina(double dash_power) const
 {
 	double stamina = GetStamina();
 
-	// out of stamina, skip
 	if (IsOutOfStamina()) {
 		return dash_power; //已经没有容量了，不需要在控制了
 	}

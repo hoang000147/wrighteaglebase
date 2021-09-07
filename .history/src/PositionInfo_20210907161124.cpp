@@ -127,12 +127,6 @@ const double & PositionInfo::GetPlayerDistToPlayer(Unum unum1, Unum unum2) const
 }
 
 // set offside line
-/*A player is marked offside, if it is
-* in the opponent half of the field,
-* closer to the opponent goal than at least two defending players,
-* closer to the opponent goal than the ball,
-* closer to the ball than 2.5 meters (this can be changed with the server parameter offside active area size).
-*/
 void PositionInfo::UpdateOffsideLine()
 {
 	const BallState &ball_state = mpWorldState->GetBall();
@@ -175,8 +169,7 @@ void PositionInfo::UpdateOffsideLine()
 		}
 	}
 
-	// if ball is behind second last opponent, set offside line to ball position
-	// because of the rules, player cannot be closer to the goal than the ball to the goal
+	// if ball is behind second last opponent (why second?), set offside line to ball position
 	if (ball_state.GetPosConf() > PlayerParam::instance().minValidConf() &&
 			ball_state.GetPos().X() > second)
 	{
@@ -185,18 +178,17 @@ void PositionInfo::UpdateOffsideLine()
 		mTeammateOffsideLineConf    = ball_state.GetPosConf();
 		mTeammateOffsideLineSpeed   = ball_state.GetVel().X();
 	}
-	// else set offside line to second last player
+	// else set offside line to second? (why not first)
 	else
 	{
 		mTeammateOffsideLine        = second;
-		// if every opponent players is in teammate half?, then set offside parameters to 0
+		// the every opponent players is in teammate half?
 		if (s_unum == 0)
 		{
 			mTeammateOffsideLineOpp    = 0;
 			mTeammateOffsideLineConf    = 0.0;
 			mTeammateOffsideLineSpeed   = 0.0;
 		}
-		// else set offside to second player
 		else
 		{
 			mTeammateOffsideLineOpp    = s_unum;
@@ -205,7 +197,7 @@ void PositionInfo::UpdateOffsideLine()
 		}
 	}
 
-	// opponent offside line, similar to teammate offside line
+	// opponent offside line
 	first   = 0.0;
 	second  = 0.0;
 	f_unum  = 0;

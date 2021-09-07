@@ -255,7 +255,6 @@ public:
 	* @return
 	*/
 	virtual bool Execute(const ActiveBehavior & act_bhv) = 0; //每周期只有一个行为被执行
-	// can submit multiple behaviors in a visual request?
 	virtual void SubmitVisualRequest(const ActiveBehavior & act_bhv, double plus = 0.0) { //但可以有多个行为提交视觉请求
 		(void) act_bhv;
 		(void) plus;

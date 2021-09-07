@@ -205,7 +205,7 @@ void PositionInfo::UpdateOffsideLine()
 		}
 	}
 
-	// opponent offside line, similar to teammate offside line
+	// opponent offside line
 	first   = 0.0;
 	second  = 0.0;
 	f_unum  = 0;

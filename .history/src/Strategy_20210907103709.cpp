@@ -483,41 +483,30 @@ bool Strategy::SetPlayAnalyse()
 
 void Strategy::SituationAnalyse()
 {
-	// if controller is opponent and ball X position < -10 (the ball is on our half field?), set situation to defense
 	if( mController < 0 && mWorldState.GetBall().GetPos().X() < -10){
 		mSituation = ST_Defense;
 	}
 	else {
-		// if ball is not free
 		if(!mIsBallFree){
-			// if controller is our teammate or no one
 			if(mController >= 0){
-				// if ball intercept position < 32 (the ball is not in opponent's 16m50 box)
 				if(mBallInterPos.X() < 32.0){
-					// if offside line > 40 (inside 16m50 box) AND the controller line type is midfielder AND ball intercept position > 25 (from half of opponent field to their goal) then set situation to penalty attack (why?)
 					if(mInfoState.GetPositionInfo().GetTeammateOffsideLine() > 40.0 && mAgent.GetFormation().GetTeammateRoleType(mController).mLineType == LT_Midfielder && mBallInterPos.X() > 25.0){
 						mSituation = ST_Penalty_Attack;
 					}
-					// else set situation to forward attack (maybe means direct attack)
 					else {
 						mSituation = ST_Forward_Attack;
 					}
 				}
-				// if ball intercept position is in opponent's 16m50 box
 				else {
 					mSituation=ST_Penalty_Attack;
 				}
 			}
-			// if controller is opponent, set situtation to defense
 			else {
 				mSituation = ST_Defense;
 			}
 		}
-		// if ball is free (QUITE SIMILAR TO ABOVE IF)
 		else{
-			// if the ball is in this player's control OR surely teammate can intercept faster than opponent
 			if(IsMyControl() || mSureTmInterCycle <= mSureOppInterCycle){
-				// if ball intercept X position < 32 AND controller is our teammate
 				if(mBallInterPos.X() < 32.0 && mController > 0) {
 					if(mInfoState.GetPositionInfo().GetTeammateOffsideLine() > 40.0 && mAgent.GetFormation().GetTeammateRoleType(mController).mLineType == LT_Midfielder && mBallInterPos.X() > 25.0) {
 						mSituation = ST_Penalty_Attack;
@@ -530,7 +519,6 @@ void Strategy::SituationAnalyse()
 					mSituation=ST_Penalty_Attack;
 				}
 			}
-			// if none of teammate can intercept the ball faster than opponent, set situation to defense,
 			else{
 				mSituation = ST_Defense;
 			}
@@ -551,8 +539,6 @@ Vector Strategy::GetTeammateSBSPPosition(Unum t,const Vector& ballpos)
 {
 	Vector position;
 
-	// set position of player with number t
-	// if controller is our teammate OR no one is controlling the ball and the ball intercept position is on opponent's half
 	if (mController > 0 ||
         (mController == 0 && mBallInterPos.X() > 10.0))
     {
@@ -563,33 +549,25 @@ Vector Strategy::GetTeammateSBSPPosition(Unum t,const Vector& ballpos)
         position = mAgent.GetFormation().GetTeammateFormationPoint(t);
 	}
 
-	// min of [player's X position] AND [teammate offside line - at point buffer? (at_point_buffer = 1, but what is it?)]
-	// this is to avoid offside
 	double x = Min(position.X(),
 			mInfoState.GetPositionInfo().GetTeammateOffsideLine() - PlayerParam::instance().AtPointBuffer());
-	// if this player is defender, then set X position between min middle point of field and current player
 	if (mAgent.GetFormation().GetTeammateRoleType(t).mLineType==LT_Defender){		//后卫不过中场，便于回防
 		position.SetX(Min(0.0,x));
 	}
-	// else if player is forward (striker), set X position between max of -1.0 and current player's position
-	// basically forward will always on the opponent half
 	else if (mAgent.GetFormation().GetTeammateRoleType(t).mLineType== LT_Forward){		//前锋不回场，便于进攻…………
 		position.SetX(Max( - 1.0,x));
 	}
-	// else if player is goalie or midfielder, keep the current position
 	else position.SetX(x);
 
-	// return player's position
 	return position;
 }
 
-// return my intercept position (predict)
+
 Vector Strategy::GetMyInterPos()
 {
 	return mBallState.GetPredictedPos(mMyInterCycle);
 }
 
-// set pieces? (corners, free kick, etc.), no need to modify this function
 Vector Strategy::AdjustTargetForSetplay(Vector target)
 {
 	if (mWorldState.GetPlayMode() > PM_Opp_Mode) {
@@ -634,16 +612,12 @@ Vector Strategy::AdjustTargetForSetplay(Vector target)
 	return target;
 }
 
-// NO NEED TO MODIFY THE FUNCTIONS ABOVE SINCE THERE ARE NO REASON TO IMPROVE PENALTY TAKING
-
-// check if our penalty has been taken
 bool Strategy::IsMyPenaltyTaken() const
 {
 	return (mWorldState.GetPlayMode() == PM_Our_Penalty_Taken) &&
 	       (mAgent.GetSelfUnum() == mPenaltyTaker);
 }
 
-// penalty check
 bool Strategy::IsPenaltyPlayMode() const
 {
     const PlayMode &play_mode = mWorldState.GetPlayMode();
@@ -652,7 +626,6 @@ bool Strategy::IsPenaltyPlayMode() const
            (play_mode >= PM_Opp_Penalty_Setup && play_mode <= PM_Opp_Penalty_Miss);
 }
 
-// analyze penalty situation
 void Strategy::PenaltyAnalyze()
 {
     if (IsPenaltyPlayMode() == false)
@@ -662,7 +635,6 @@ void Strategy::PenaltyAnalyze()
 
     if (mWorldState.GetPlayModeTime() == mWorldState.CurrentTime())
     {
-		// penalty takers' turns?
     	static Unum penalty_taker_seq[] = {1, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2};
         const PlayMode &play_mode = mWorldState.GetPlayMode();
         if (play_mode == PM_Our_Penalty_Setup)

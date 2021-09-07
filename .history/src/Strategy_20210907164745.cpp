@@ -589,7 +589,7 @@ Vector Strategy::GetMyInterPos()
 	return mBallState.GetPredictedPos(mMyInterCycle);
 }
 
-// set pieces? (corners, free kick, etc.), no need to modify this function
+// set pieces? (corners, free kick, etc.)
 Vector Strategy::AdjustTargetForSetplay(Vector target)
 {
 	if (mWorldState.GetPlayMode() > PM_Opp_Mode) {

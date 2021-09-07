@@ -30,50 +30,41 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                *
  ************************************************************************************/
 
-#include "BehaviorAttack.h"
-#include "BehaviorShoot.h"
-#include "BehaviorPass.h"
-#include "BehaviorDribble.h"
-#include "BehaviorIntercept.h"
-#include "BehaviorPosition.h"
-#include "WorldState.h"
-#include "BehaviorHold.h"
+#ifndef DECISIONTREE_H_
+#define DECISIONTREE_H_
 
+#include <list>
+#include "BehaviorBase.h"
 
-BehaviorAttackPlanner::BehaviorAttackPlanner(Agent & agent): BehaviorPlannerBase<BehaviorAttackData>( agent )
-{
-}
+class Agent;
 
-BehaviorAttackPlanner::~BehaviorAttackPlanner()
-{
-}
+class DecisionTree {
+public:
+	DecisionTree() {}
+	virtual ~DecisionTree() {}
 
-void BehaviorAttackPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
-{
-	// if ball can be caught by this player (goalie) 
-	// AND last controller is opponent and
-	// AND last active behavior is not PASS or Dribble then return
-	// because goalkeeper just catch the ball so there is no need and no way to attack at this point
-	if (mSelfState.IsBallCatchable()  && mStrategy.IsLastOppControl() &&(!(mAgent.IsLastActiveBehaviorInActOf(BT_Pass)||mAgent.IsLastActiveBehaviorInActOf(BT_Dribble)))) return;
+	/**
+	 * 做决策
+	 * @param agent
+	 */
+	bool Decision(Agent & agent);
 
-	BehaviorInterceptPlanner(mAgent).Plan(mActiveBehaviorList);
-	BehaviorShootPlanner(mAgent).Plan(mActiveBehaviorList);
-	BehaviorPassPlanner(mAgent).Plan(mActiveBehaviorList);
-	BehaviorDribblePlanner(mAgent).Plan(mActiveBehaviorList);
-	BehaviorPositionPlanner(mAgent).Plan(mActiveBehaviorList);
-	BehaviorHoldPlanner(mAgent).Plan(mActiveBehaviorList);
+private:
+	/**
+	* 搜索决策树，完成对（状态、动作）的评估
+	* @param agent 当前节点的局策主体
+	* @param step 当前节点地深度（这里深度是反过来计数地，step = 1是最后一层，step = max_step 是第一层）
+	* @return
+	*/
+	ActiveBehavior Search(Agent & agent, int step);
 
-	if (!mActiveBehaviorList.empty()) {
-		mActiveBehaviorList.sort(std::greater<ActiveBehavior>());
-		behavior_list.push_back(mActiveBehaviorList.front());
+	ActiveBehavior GetBestActiveBehavior(Agent & agent, std::list<ActiveBehavior> & behavior_list);
 
-		if (mActiveBehaviorList.size() > 1) { //允许非最优行为提交视觉请求
-			double plus = 1.0;
-			ActiveBehaviorPtr it = mActiveBehaviorList.begin();
-			for (++it; it != mActiveBehaviorList.end(); ++it) {
-				it->SubmitVisualRequest(plus);
-				plus *= 2.0;
-			}
-		}
+	template <typename BehaviorDerived>
+	bool MutexPlan(Agent & agent, std::list<ActiveBehavior> & active_behavior_list){
+		BehaviorDerived(agent).Plan(active_behavior_list);
+		return !active_behavior_list.empty();
 	}
-}
+};
+
+#endif /* DECISIONTREE_H_ */

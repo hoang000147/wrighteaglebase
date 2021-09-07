@@ -761,13 +761,6 @@ Vector Formation::GetTeammateFormationPoint(Unum unum, const Vector & ball_pos)
 	return point;
 }
 
-/**
- * Situation based strategy position
- * \param unum unum of teammate.
- * \param focusTm unum of focus teammate or opponent (ball controller)
- * \param focusPt focused point (ball position)
- * This function returns where the player [unum] should be based on the formation, the ball controller and ball position
- */
 Vector Formation::GetTeammateFormationPoint(Unum unum, Unum focusTm, Vector focusPt)
 {
 	Assert(unum >= 1 && unum <= TEAMSIZE);
