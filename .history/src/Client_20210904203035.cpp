@@ -202,7 +202,6 @@ void Client::ConstructAgent()
    	 }
 	mpAgent = new Agent(mpObserver->SelfUnum(), mpWorldModel, false); //要知道号码才能初始化
 
-	// add new agent to calculation
 	Formation::instance.AssignWith(mpAgent);
 	mpCommandSender->RegisterAgent(mpAgent);
 	CommunicateSystem::instance().Initial(mpObserver , mpAgent); //init communicate system
@@ -228,7 +227,6 @@ void Client::MainLoop()
             break;
         }
 
-		// run players' actions each loop
         DynamicDebug::instance().AddMessage("\0", MT_Run); // 动态调试记录Run信息
         Run();
 

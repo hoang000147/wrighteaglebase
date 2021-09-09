@@ -95,7 +95,6 @@ void ActiveBehavior::SubmitVisualRequest(double plus)
 	if (behavior){
 		Logger::instance().GetTextLogger("executing") << GetAgent().GetWorldState().CurrentTime() << " " << BehaviorFactory::instance().GetBehaviorName(GetType()) << " visual plus: " << plus << std::endl;
 
-		// where is BehaviorExecutable::SubmitVisualRequest defined?
 		behavior->SubmitVisualRequest(*this, plus);
 
 		delete behavior;

@@ -30,74 +30,118 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                *
  ************************************************************************************/
 
-#include "DecisionTree.h"
-#include "BehaviorPenalty.h"
-#include "BehaviorSetplay.h"
-#include "BehaviorAttack.h"
-#include "BehaviorGoalie.h"
-#include "BehaviorDefense.h"
-#include "BehaviorIntercept.h"
+#include "BehaviorBase.h"
 #include "Agent.h"
+#include "WorldState.h"
+#include "InfoState.h"
 #include "Strategy.h"
-#include "TimeTest.h"
+#include "Analyser.h"
+#include "Logger.h"
 
-bool DecisionTree::Decision(Agent & agent)
+BehaviorAttackData::BehaviorAttackData(Agent & agent):
+	mAgent ( agent ),
+    mWorldState ( agent.GetWorldState() ),
+    mBallState ( agent.GetWorldState().GetBall() ),
+	mSelfState ( agent.Self() ),
+	mPositionInfo ( agent.Info().GetPositionInfo()),
+	mInterceptInfo ( agent.Info().GetInterceptInfo()),
+	mStrategy (agent.GetStrategy()),
+    mFormation ( agent.GetFormation() )
 {
-	Assert(agent.GetSelf().IsAlive());
+	mFormation.Update(Formation::Offensive, "Offensive");
+}
 
-	ActiveBehavior beh = Search(agent, 1);
+BehaviorAttackData::~BehaviorAttackData()
+{
+	mFormation.Rollback("Offensive");
+}
 
-	// if it is a valid behavior, set agent behavior to this and (return) execute it
-	if (beh.GetType() != BT_None) {
-		agent.SetActiveBehaviorInAct(beh.GetType());
-		Assert(&beh.GetAgent() == &agent);
-		return beh.Execute();
+BehaviorDefenseData::BehaviorDefenseData(Agent & agent):
+	BehaviorAttackData (agent),
+	mAnalyser (agent.GetAnalyser())
+{
+	mFormation.Update(Formation::Defensive, "Defensive");
+}
+
+BehaviorDefenseData::~BehaviorDefenseData()
+{
+	mFormation.Rollback("Defensive");
+}
+
+bool ActiveBehavior::Execute()
+{
+	// create a behavior in BehaviorFactory using this ActiveBehavior's object agent and type
+	BehaviorExecutable * behavior = BehaviorFactory::instance().CreateBehavior(GetAgent(), GetType());
+
+	// if behavior created successfully, execute that behavior by
+	if (behavior){
+		Logger::instance().GetTextLogger("executing") << GetAgent().GetWorldState().CurrentTime() << " " << BehaviorFactory::instance().GetBehaviorName(GetType()) << " executing" << std::endl;
+
+		behavior->SubmitVisualRequest(*this);
+		bool ret = behavior->Execute(*this);
+
+		delete behavior;
+		return ret;
 	}
+	else {
+		return false;
+	}
+}
+
+void ActiveBehavior::SubmitVisualRequest(double plus)
+{
+	BehaviorExecutable * behavior = BehaviorFactory::instance().CreateBehavior(GetAgent(), GetType());
+
+	if (behavior){
+		Logger::instance().GetTextLogger("executing") << GetAgent().GetWorldState().CurrentTime() << " " << BehaviorFactory::instance().GetBehaviorName(GetType()) << " visual plus: " << plus << std::endl;
+
+		behavior->SubmitVisualRequest(*this, plus);
+
+		delete behavior;
+	}
+}
+
+BehaviorFactory::BehaviorFactory()
+{
+}
+
+BehaviorFactory::~BehaviorFactory()
+{
+}
+
+// return a reference to a static BehaviorFactory object
+BehaviorFactory & BehaviorFactory::instance()
+{
+	static BehaviorFactory factory;
+
+	return factory;
+}
+
+BehaviorExecutable * BehaviorFactory::CreateBehavior(Agent & agent, BehaviorType type)
+{
+	if (type == BT_None) {
+		return 0;
+	}
+
+	BehaviorCreator creator = mCreatorMap[type];
+
+	if (creator){
+		return creator( agent );
+	}
+
+	return 0;
+}
+
+bool BehaviorFactory::RegisterBehavior(BehaviorType type, BehaviorCreator creator, const char *behavior_name)
+{
+	if (type > BT_None && type < BT_Max) {
+		if (mCreatorMap[type] == 0){
+			mCreatorMap[type] = creator;
+			mNameMap[type] = behavior_name;
+			return true;
+		}
+	}
+
 	return false;
 }
 
-ActiveBehavior DecisionTree::Search(Agent & agent, int step)
-{
-	if (step == 1) {
-		if (agent.GetSelf().IsIdling()) {
-			return ActiveBehavior(agent, BT_None);
-		}
-
-		std::list<ActiveBehavior> active_behavior_list;
-
-		// why using if else here?
-
-		if (agent.GetSelf().IsGoalie()) {
-			MutexPlan<BehaviorPenaltyPlanner>(agent, active_behavior_list) ||
-			MutexPlan<BehaviorSetplayPlanner>(agent, active_behavior_list) ||
-			MutexPlan<BehaviorAttackPlanner>(agent, active_behavior_list) ||
-			MutexPlan<BehaviorGoaliePlanner>(agent, active_behavior_list);
-		}
-		else {
-			MutexPlan<BehaviorPenaltyPlanner>(agent, active_behavior_list) ||
-			MutexPlan<BehaviorSetplayPlanner>(agent, active_behavior_list) ||
-			MutexPlan<BehaviorAttackPlanner>(agent, active_behavior_list) ||
-			MutexPlan<BehaviorDefensePlanner>(agent, active_behavior_list);
-		}
-
-		if (!active_behavior_list.empty()){
-			return GetBestActiveBehavior(agent, active_behavior_list);
-		}
-		else {
-			return ActiveBehavior(agent, BT_None);
-		}
-	}
-	else {
-		return ActiveBehavior(agent, BT_None);
-	}
-}
-
-ActiveBehavior DecisionTree::GetBestActiveBehavior(Agent & agent, std::list<ActiveBehavior> & behavior_list)
-{
-	//The behavior_list stores the optimal activebehavior made by all behavior decisions in this cycle, and it is saved here for use in the next cycle plan of a specific behavior 
-	agent.SaveActiveBehaviorList(behavior_list); //behavior_list里面存储了本周期所有behavior决策出的最优activebehavior，这里统一保存一下，供特定behavior下周期plan时用
-
-	behavior_list.sort(std::greater<ActiveBehavior>());
-
-	return behavior_list.front();
-}

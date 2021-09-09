@@ -80,7 +80,7 @@ bool Strategy::IsTmKickable() const
 	return (mInfoState.GetPositionInfo().GetTeammateWithBall() > 0);
 }
 
-// where is this function called?
+// where is this function calleD?
 void Strategy::UpdateRoutine()
 {
 	StrategyAnalyze();

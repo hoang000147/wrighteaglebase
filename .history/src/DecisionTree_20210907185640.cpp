@@ -65,8 +65,6 @@ ActiveBehavior DecisionTree::Search(Agent & agent, int step)
 
 		std::list<ActiveBehavior> active_behavior_list;
 
-		// why using if else here?
-
 		if (agent.GetSelf().IsGoalie()) {
 			MutexPlan<BehaviorPenaltyPlanner>(agent, active_behavior_list) ||
 			MutexPlan<BehaviorSetplayPlanner>(agent, active_behavior_list) ||
@@ -94,7 +92,6 @@ ActiveBehavior DecisionTree::Search(Agent & agent, int step)
 
 ActiveBehavior DecisionTree::GetBestActiveBehavior(Agent & agent, std::list<ActiveBehavior> & behavior_list)
 {
-	//The behavior_list stores the optimal activebehavior made by all behavior decisions in this cycle, and it is saved here for use in the next cycle plan of a specific behavior 
 	agent.SaveActiveBehaviorList(behavior_list); //behavior_list里面存储了本周期所有behavior决策出的最优activebehavior，这里统一保存一下，供特定behavior下周期plan时用
 
 	behavior_list.sort(std::greater<ActiveBehavior>());

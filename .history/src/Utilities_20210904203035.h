@@ -291,9 +291,9 @@ timeval GetRealTimeCommandSend();
 
 /**
  * 安全数组，Debug版本会检查越界访问
- * _Tp 数据域类型, field type
- * _Nm 数组大小, array size
- * _Zero 标记是否在构造函数内清零, mark is cleared in the constructor?
+ * _Tp 数据域类型
+ * _Nm 数组大小
+ * _Zero 标记是否在构造函数内清零
  */
 template<typename _Tp, std::size_t _Nm, bool _Zero = false>
 class Array

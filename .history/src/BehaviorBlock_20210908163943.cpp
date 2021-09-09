@@ -30,74 +30,69 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                *
  ************************************************************************************/
 
-#include "DecisionTree.h"
-#include "BehaviorPenalty.h"
-#include "BehaviorSetplay.h"
-#include "BehaviorAttack.h"
-#include "BehaviorGoalie.h"
-#include "BehaviorDefense.h"
-#include "BehaviorIntercept.h"
+#include "BehaviorBlock.h"
+#include "VisualSystem.h"
+#include "Formation.h"
+#include "Dasher.h"
+#include "BasicCommand.h"
+#include "BehaviorPosition.h"
 #include "Agent.h"
-#include "Strategy.h"
-#include "TimeTest.h"
+#include "PositionInfo.h"
+#include "Logger.h"
+#include "Evaluation.h"
 
-bool DecisionTree::Decision(Agent & agent)
+const BehaviorType BehaviorBlockExecuter::BEHAVIOR_TYPE = BT_Block;
+
+namespace
 {
-	Assert(agent.GetSelf().IsAlive());
-
-	ActiveBehavior beh = Search(agent, 1);
-
-	// if it is a valid behavior, set agent behavior to this and (return) execute it
-	if (beh.GetType() != BT_None) {
-		agent.SetActiveBehaviorInAct(beh.GetType());
-		Assert(&beh.GetAgent() == &agent);
-		return beh.Execute();
-	}
-	return false;
+bool ret = BehaviorExecutable::AutoRegister<BehaviorBlockExecuter>();
 }
 
-ActiveBehavior DecisionTree::Search(Agent & agent, int step)
+BehaviorBlockExecuter::BehaviorBlockExecuter(Agent & agent) :
+	BehaviorExecuterBase<BehaviorDefenseData>(agent)
 {
-	if (step == 1) {
-		if (agent.GetSelf().IsIdling()) {
-			return ActiveBehavior(agent, BT_None);
-		}
+	Assert(ret);
+}
 
-		std::list<ActiveBehavior> active_behavior_list;
+BehaviorBlockExecuter::~BehaviorBlockExecuter(void)
+{
+}
 
-		// why using if else here?
+bool BehaviorBlockExecuter::Execute(const ActiveBehavior & beh)
+{
+	Logger::instance().LogGoToPoint(mSelfState.GetPos(), beh.mTarget, "@Block");
 
-		if (agent.GetSelf().IsGoalie()) {
-			MutexPlan<BehaviorPenaltyPlanner>(agent, active_behavior_list) ||
-			MutexPlan<BehaviorSetplayPlanner>(agent, active_behavior_list) ||
-			MutexPlan<BehaviorAttackPlanner>(agent, active_behavior_list) ||
-			MutexPlan<BehaviorGoaliePlanner>(agent, active_behavior_list);
-		}
-		else {
-			MutexPlan<BehaviorPenaltyPlanner>(agent, active_behavior_list) ||
-			MutexPlan<BehaviorSetplayPlanner>(agent, active_behavior_list) ||
-			MutexPlan<BehaviorAttackPlanner>(agent, active_behavior_list) ||
-			MutexPlan<BehaviorDefensePlanner>(agent, active_behavior_list);
-		}
+	return Dasher::instance().GoToPoint(mAgent, beh.mTarget, beh.mBuffer, beh.mPower, true, false);
+}
 
-		if (!active_behavior_list.empty()){
-			return GetBestActiveBehavior(agent, active_behavior_list);
-		}
-		else {
-			return ActiveBehavior(agent, BT_None);
-		}
+BehaviorBlockPlanner::BehaviorBlockPlanner(Agent & agent):
+	BehaviorPlannerBase<BehaviorDefenseData>( agent)
+{
+}
+
+BehaviorBlockPlanner::~BehaviorBlockPlanner()
+{
+}
+
+void BehaviorBlockPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
+{
+	Unum closest_tm = mPositionInfo.GetClosestTeammateToBall();
+	if(mWorldState.GetPlayMode() >= PM_Opp_Corner_Kick &&
+			mWorldState.GetPlayMode() <=PM_Opp_Offside_Kick){
+		return;
 	}
-	else {
-		return ActiveBehavior(agent, BT_None);
+
+	// if closest teammate is this player OR this player's intercept cycle <= sure teammate intercept cycle, this player will block
+	if (closest_tm == mSelfState.GetUnum() || mStrategy.GetMyInterCycle() <= mStrategy.GetSureTmInterCycle()) {
+		//create an ActiveBehavior with its behavior set as block, then modify its parameters later
+		ActiveBehavior block(mAgent, BT_Block);
+
+		block.mBuffer = 0.5;
+		block.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower());
+		block.mTarget = mAnalyser.mLightHouse;
+		block.mEvaluation = 1.0 + FLOAT_EPS; // what does this do?
+
+		behavior_list.push_back(block);
 	}
 }
 
-ActiveBehavior DecisionTree::GetBestActiveBehavior(Agent & agent, std::list<ActiveBehavior> & behavior_list)
-{
-	//The behavior_list stores the optimal activebehavior made by all behavior decisions in this cycle, and it is saved here for use in the next cycle plan of a specific behavior 
-	agent.SaveActiveBehaviorList(behavior_list); //behavior_list里面存储了本周期所有behavior决策出的最优activebehavior，这里统一保存一下，供特定behavior下周期plan时用
-
-	behavior_list.sort(std::greater<ActiveBehavior>());
-
-	return behavior_list.front();
-}
