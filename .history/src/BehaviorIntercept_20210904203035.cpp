@@ -107,7 +107,6 @@ void BehaviorInterceptPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 	Rectangular GoalieInterRec = ServerParam::instance().ourGoalArea();
 	GoalieInterRec.SetRight(ServerParam::instance().ourPenaltyArea().Right());
 
-	// if this player can surely intercepts
 	if (mStrategy.GetMyInterCycle() <= mStrategy.GetMinTmInterCycle() && mStrategy.GetMyInterCycle() <= mStrategy.GetSureOppInterCycle() + 1 && (!mSelfState.IsGoalie())) {
 		ActiveBehavior intercept(mAgent, BT_Intercept, BDT_Intercept_Normal);
 
@@ -116,8 +115,6 @@ void BehaviorInterceptPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 
 		behavior_list.push_back(intercept);
 	}
-	// if there is no opponent close to ball
-	// OR distance between closest teammate and closest opponent to ball <= 1 AND this player is the second closest teammate to ball
 	else if (mPositionInfo.GetClosestOpponentToBall() == 0 ||
   		((mWorldState.GetTeammate(mPositionInfo.GetClosestTeammateToBall()).GetPos()-mWorldState.GetOpponent(mPositionInfo.GetClosestOpponentToBall()).GetPos()).Mod() <= 1 &&
 			mSelfState.GetUnum() == mPositionInfo.GetCloseTeammateToBall().at(1)))//0.4受PlayerSize影响，这里直接使用0.3
@@ -128,19 +125,16 @@ void BehaviorInterceptPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 		behavior_list.push_back(intercept);
 
 	}
-	// if this player is goalie and the intercept position is in goalie's valid interception rectangle
 	else if (mSelfState.IsGoalie() && GoalieInterRec.IsWithin(mStrategy.GetMyInterPos()))
 	{
 		ActiveBehavior intercept(mAgent, BT_Intercept, BDT_Intercept_Normal);
 		intercept.mTarget = mStrategy.GetMyInterPos();
 		intercept.mEvaluation = Evaluation::instance().EvaluatePosition(intercept.mTarget, true);
-		// if this is opponent's penalty, reevaluate
 		if(mWorldState.GetPlayMode() == PM_Opp_Penalty_Taken){
 			intercept.mEvaluation = Evaluation::instance().EvaluatePosition(intercept.mTarget, false);
 		}
 		behavior_list.push_back(intercept);
 	}
-	// if this player is the closest teammate to ball and not the goalie
 	else if (mSelfState.GetUnum() == mPositionInfo.GetClosestTeammateToBall()
 			&& !mSelfState.IsGoalie()){
 		ActiveBehavior intercept(mAgent, BT_Intercept, BDT_Intercept_Normal);
@@ -148,7 +142,6 @@ void BehaviorInterceptPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 		intercept.mEvaluation = Evaluation::instance().EvaluatePosition(intercept.mTarget, true);
 		behavior_list.push_back(intercept);
 	}
-	// if closest teammate to ball is goalie AND this player is the second closest to ball
 	else if (mPositionInfo.GetClosestTeammateToBall() == mWorldState.GetTeammateGoalieUnum()
 			&& mSelfState.GetUnum() == mPositionInfo.GetCloseTeammateToBall()[1]){
 

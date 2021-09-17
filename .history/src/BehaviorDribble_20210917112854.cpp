@@ -151,7 +151,7 @@ void BehaviorDribblePlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 	// if player is goalie, return
 	if (mSelfState.IsGoalie()) return;
 
-	// for 180 degrees angle in front of player, evaluate dribble_NORMAL behavior and add it to the list if possible
+	// for 180 degrees angle in front of player
 	for (AngleDeg dir = -90.0; dir < 90.0; dir += 2.5) {
 		ActiveBehavior dribble(mAgent, BT_Dribble, BDT_Dribble_Normal);
 
@@ -179,59 +179,44 @@ void BehaviorDribblePlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 		// dribble target position = player's position + vector polar (probably the distance if the player runs with max speed in the current direction)
 		dribble.mTarget= mSelfState.GetPos() + Polar2Vector( mSelfState.GetEffectiveSpeedMax(), dir);
 
-		// set behavior's evaluation to the calculation of (target position)
 		dribble.mEvaluation = Evaluation::instance().EvaluatePosition(dribble.mTarget, true);
 
-		// add behavior to the list
 		mActiveBehaviorList.push_back(dribble);
 	}
 	double speed = mSelfState.GetEffectiveSpeedMax();
 
-	// for 180 degrees angle in front of player, evaluate dribble_FAST behavior and add it to the list if possible
 	for (AngleDeg dir = -90.0; dir < 90.0; dir += 2.5) {
 		ActiveBehavior dribble(mAgent, BT_Dribble, BDT_Dribble_Fast);
 		dribble.mKickSpeed = speed;
 		dribble.mAngle = dir;
 
 		const std::vector<Unum> & opp2ball = mPositionInfo.GetCloseOpponentToBall();
-		// calculate target point from kickspeed and current direction
-		// seems like fast dribble means kick the ball to a further position than normal then run to it
 		Vector target = mBallState.GetPos() + Polar2Vector(dribble.mKickSpeed * 10, dribble.mAngle);
-		// if the target point is out of field the skip
 		if(!ServerParam::instance().pitchRectanglar().IsWithin(target)){
 			continue;
 		}
-
 		bool ok = true;
 		for (uint j = 0; j < opp2ball.size(); ++j) {
 			Vector rel_pos = mWorldState.GetOpponent(opp2ball[j]).GetPos() - target;
-			// if distance from this opponent < kickspeed * 12 
-			// OR opponent's position config (confidence?) < min valid conf
-			// set ok = false and break the loop
 			if (rel_pos.Mod() < dribble.mKickSpeed * 12 ||
 					mWorldState.GetOpponent(opp2ball[j]).GetPosConf() < PlayerParam::instance().minValidConf()){
 				ok = false;
 				break;
 			}
 		}
-		// if ok = false then skip this direction
 		if(!ok){
 			continue;
 		}
-
 		dribble.mEvaluation = 0;
-		// add the evaluations of position within the range of 1-8 kickspeed (kick the ball with the force between 1-8)
 		for (int i = 1; i <= 8; ++i) {
 			dribble.mEvaluation += Evaluation::instance().EvaluatePosition(mBallState.GetPos() + Polar2Vector(dribble.mKickSpeed * i, dribble.mAngle), true);
 		}
-		// take the average evaluation and set target
 		dribble.mEvaluation /= 8;
 		dribble.mTarget = target;
 
 		mActiveBehaviorList.push_back(dribble);
 	}
 
-	// add the behavior with highest evaluation point to the list
 	if (!mActiveBehaviorList.empty()) {
 		mActiveBehaviorList.sort(std::greater<ActiveBehavior>());
 		behavior_list.push_back(mActiveBehaviorList.front());

@@ -30,7 +30,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                *
  ************************************************************************************/
 
-#include "BehaviorMark.h"
+#include "BehaviorFormation.h"
 #include "VisualSystem.h"
 #include "Formation.h"
 #include "Dasher.h"
@@ -39,61 +39,91 @@
 #include "Agent.h"
 #include "PositionInfo.h"
 #include "Logger.h"
+#include <cstdlib>
 #include "Evaluation.h"
 
-const BehaviorType BehaviorMarkExecuter::BEHAVIOR_TYPE = BT_Mark;
+const BehaviorType BehaviorFormationExecuter::BEHAVIOR_TYPE = BT_Formation;
 
 namespace
 {
-bool ret = BehaviorExecutable::AutoRegister<BehaviorMarkExecuter>();
+bool ret = BehaviorExecutable::AutoRegister<BehaviorFormationExecuter>();
 }
 
-BehaviorMarkExecuter::BehaviorMarkExecuter(Agent & agent) :
+BehaviorFormationExecuter::BehaviorFormationExecuter(Agent & agent) :
 	BehaviorExecuterBase<BehaviorDefenseData>(agent)
 {
 	Assert(ret);
 }
 
-BehaviorMarkExecuter::~BehaviorMarkExecuter(void)
+BehaviorFormationExecuter::~BehaviorFormationExecuter(void)
 {
 }
 
-bool BehaviorMarkExecuter::Execute(const ActiveBehavior & beh)
+bool BehaviorFormationExecuter::Execute(const ActiveBehavior & beh)
 {
-	Logger::instance().LogGoToPoint(mSelfState.GetPos(), beh.mTarget, "@Mark");
+	Logger::instance().LogGoToPoint(mSelfState.GetPos(), beh.mTarget, "@Formation");
 
-	return Dasher::instance().GoToPoint(mAgent, beh.mTarget, beh.mBuffer, beh.mPower, false, false);
+	return Dasher::instance().GoToPoint(mAgent, beh.mTarget, beh.mBuffer, beh.mPower, false, true);
 }
 
-BehaviorMarkPlanner::BehaviorMarkPlanner(Agent & agent):
+BehaviorFormationPlanner::BehaviorFormationPlanner(Agent & agent):
 	BehaviorPlannerBase<BehaviorDefenseData>( agent)
 {
 }
 
-BehaviorMarkPlanner::~BehaviorMarkPlanner()
+BehaviorFormationPlanner::~BehaviorFormationPlanner()
 {
 }
 
-void BehaviorMarkPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
+void BehaviorFormationPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 {
-	Unum closest_opp = mPositionInfo.GetClosestOpponentToTeammate(mSelfState.GetUnum());
-	Unum closest_tm = mPositionInfo.GetClosestTeammateToOpponent(closest_opp);
-	
-	// if closest teammate to closest opponent is this player
-	if (closest_opp && closest_tm && closest_tm == mSelfState.GetUnum()) {
-		ActiveBehavior mark(mAgent, BT_Mark);
+	ActiveBehavior formation(mAgent, BT_Formation);
 
-		Vector ballPos = mBallState.GetPos();
-		AngleDeg b2o = (mBallState.GetPos()- mWorldState.GetOpponent(closest_opp).GetPos()).Dir();
-		mark.mBuffer = mSelfState.GetKickableArea();
-		mark.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower());
-		mark.mTarget = mWorldState.GetOpponent(closest_opp).GetPos()  + Polar2Vector(mark.mBuffer , b2o);
-		mark.mEvaluation = Evaluation::instance().EvaluatePosition(mark.mTarget, false);
-		if( mAgent.GetFormation().GetMyRole().mLineType == LT_Defender){
-			mark.mEvaluation = Evaluation::instance().EvaluatePosition(mark.mTarget, true);
-		}
-
-		behavior_list.push_back(mark);
+	formation.mBuffer = 1.0;
+	formation.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower());
+	formation.mTarget = mAnalyser.mHome[mSelfState.GetUnum()];
+	if(formation.mTarget.X() < mSelfState.GetPos().X() && mAgent.GetFormation().GetMyRole().mLineType == LT_Forward){
+		formation.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower())/2;
 	}
+
+
+	if(mAgent.GetFormation().GetMyRole().mLineType == LT_Defender){
+		formation.mTarget.SetX(Min(0.0,formation.mTarget.X()));
+		if(mBallState.GetPos().X() < -25){
+			Unum goalie = mWorldState.GetTeammateGoalieUnum();
+			Vector gpos = mWorldState.GetTeammate(goalie).GetPos();
+			Vector left = (ServerParam::instance().ourLeftGoalPost() + gpos)/2;
+			Vector right = (ServerParam::instance().ourRightGoalPost() + gpos)/2;
+			Line l(gpos,mBallState.GetPos());
+			if(l.IsPointInSameSide(left,ServerParam::instance().ourGoal())){
+			const std::vector<Unum> & t2t = mPositionInfo.GetClosePlayerToPoint(left,goalie);
+			if(t2t[0] == mSelfState.GetUnum()){
+				formation.mTarget = left;
+			}
+			else if(mPositionInfo.GetClosePlayerToPoint(right,t2t[0])[0] == mSelfState.GetUnum()){
+				formation.mTarget = right;
+			} else if(mPositionInfo.GetClosePlayerToPoint(right,t2t[0])[0] == goalie && mPositionInfo.GetClosePlayerToPoint(right,t2t[0])[1] == mSelfState.GetUnum()){
+				formation.mTarget = right;
+			}
+			}
+			else {
+				const std::vector<Unum> & t2t = mPositionInfo.GetClosePlayerToPoint(right,goalie);
+				if(t2t[0] == mSelfState.GetUnum()){
+					formation.mTarget = right;
+				}
+				else if(mPositionInfo.GetClosePlayerToPoint(left,t2t[0])[0] == mSelfState.GetUnum()){
+					formation.mTarget = left;
+				} else if(mPositionInfo.GetClosePlayerToPoint(left,t2t[0])[0] == goalie && mPositionInfo.GetClosePlayerToPoint(right,t2t[0])[1] == mSelfState.GetUnum()){
+					formation.mTarget = left;
+				}
+			}
+
+		}
+		formation.mEvaluation = Evaluation::instance().EvaluatePosition(formation.mTarget, true);
+	}
+
+	else formation.mEvaluation = Evaluation::instance().EvaluatePosition(formation.mTarget, false);
+
+	behavior_list.push_back(formation);
 }
 

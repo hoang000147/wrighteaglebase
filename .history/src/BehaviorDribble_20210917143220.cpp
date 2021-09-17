@@ -218,13 +218,11 @@ void BehaviorDribblePlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 		if(!ok){
 			continue;
 		}
-
+		
 		dribble.mEvaluation = 0;
-		// add the evaluations of position within the range of 1-8 kickspeed (kick the ball with the force between 1-8)
 		for (int i = 1; i <= 8; ++i) {
 			dribble.mEvaluation += Evaluation::instance().EvaluatePosition(mBallState.GetPos() + Polar2Vector(dribble.mKickSpeed * i, dribble.mAngle), true);
 		}
-		// take the average evaluation and set target
 		dribble.mEvaluation /= 8;
 		dribble.mTarget = target;
 

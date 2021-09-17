@@ -83,17 +83,14 @@ void BehaviorFormationPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 	formation.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower());
 	// target = player's position in the formation
 	formation.mTarget = mAnalyser.mHome[mSelfState.GetUnum()];
-	// if this player is a striker and its formation position requires to move back, move back slowly (half the power)
+	// if this player is a striker and its formation position requires to move back, move back slowly
 	if(formation.mTarget.X() < mSelfState.GetPos().X() && mAgent.GetFormation().GetMyRole().mLineType == LT_Forward){
 		formation.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower())/2;
 	}
 
-	// if this player is a defender
+
 	if(mAgent.GetFormation().GetMyRole().mLineType == LT_Defender){
-		// set this player's formation's target X position 
-		// set it to 0 (the half field line) if the formation requires to move to the opponent's half
 		formation.mTarget.SetX(Min(0.0,formation.mTarget.X()));
-		// if the ball is in the deeper half of our half
 		if(mBallState.GetPos().X() < -25){
 			Unum goalie = mWorldState.GetTeammateGoalieUnum();
 			Vector gpos = mWorldState.GetTeammate(goalie).GetPos();

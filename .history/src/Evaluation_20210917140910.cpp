@@ -30,70 +30,49 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                *
  ************************************************************************************/
 
-#include "BehaviorMark.h"
-#include "VisualSystem.h"
-#include "Formation.h"
-#include "Dasher.h"
-#include "BasicCommand.h"
-#include "BehaviorPosition.h"
+#include "Evaluation.h"
+#include "ServerParam.h"
 #include "Agent.h"
 #include "PositionInfo.h"
-#include "Logger.h"
-#include "Evaluation.h"
+#include "Strategy.h"
+#include "Net.h"
+#include "WorldState.h"
+#include "InfoState.h"
 
-const BehaviorType BehaviorMarkExecuter::BEHAVIOR_TYPE = BT_Mark;
-
-namespace
+Evaluation::Evaluation()
 {
-bool ret = BehaviorExecutable::AutoRegister<BehaviorMarkExecuter>();
+	mSensitivityNet = new Net("data/sensitivity.net");
 }
 
-BehaviorMarkExecuter::BehaviorMarkExecuter(Agent & agent) :
-	BehaviorExecuterBase<BehaviorDefenseData>(agent)
+Evaluation::~Evaluation()
 {
-	Assert(ret);
+	delete mSensitivityNet;
 }
 
-BehaviorMarkExecuter::~BehaviorMarkExecuter(void)
+Evaluation & Evaluation::instance()
 {
+    static Evaluation evaluation;
+    return evaluation;
 }
 
-bool BehaviorMarkExecuter::Execute(const ActiveBehavior & beh)
+/**
+ * \param pos: current position
+ * \param ourside: is on our half (true or false)
+ */
+double Evaluation::EvaluatePosition(const Vector & pos, bool ourside)
 {
-	Logger::instance().LogGoToPoint(mSelfState.GetPos(), beh.mTarget, "@Mark");
+	static double input[2];
+	static double output[1];
 
-	return Dasher::instance().GoToPoint(mAgent, beh.mTarget, beh.mBuffer, beh.mPower, false, false);
-}
-
-BehaviorMarkPlanner::BehaviorMarkPlanner(Agent & agent):
-	BehaviorPlannerBase<BehaviorDefenseData>( agent)
-{
-}
-
-BehaviorMarkPlanner::~BehaviorMarkPlanner()
-{
-}
-
-void BehaviorMarkPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
-{
-	Unum closest_opp = mPositionInfo.GetClosestOpponentToTeammate(mSelfState.GetUnum());
-	Unum closest_tm = mPositionInfo.GetClosestTeammateToOpponent(closest_opp);
-	
-	// if closest teammate to closest opponent is this player
-	if (closest_opp && closest_tm && closest_tm == mSelfState.GetUnum()) {
-		ActiveBehavior mark(mAgent, BT_Mark);
-
-		Vector ballPos = mBallState.GetPos();
-		AngleDeg b2o = (mBallState.GetPos()- mWorldState.GetOpponent(closest_opp).GetPos()).Dir();
-		mark.mBuffer = mSelfState.GetKickableArea();
-		mark.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower());
-		mark.mTarget = mWorldState.GetOpponent(closest_opp).GetPos()  + Polar2Vector(mark.mBuffer , b2o);
-		mark.mEvaluation = Evaluation::instance().EvaluatePosition(mark.mTarget, false);
-		if( mAgent.GetFormation().GetMyRole().mLineType == LT_Defender){
-			mark.mEvaluation = Evaluation::instance().EvaluatePosition(mark.mTarget, true);
-		}
-
-		behavior_list.push_back(mark);
+	// x / half length of pitch
+	input[0] = pos.X() / (ServerParam::instance().PITCH_LENGTH * 0.5);
+	// (absolute y / half width of pitch) * 2 - 1
+	input[1] = fabs(pos.Y()) / (ServerParam::instance().PITCH_WIDTH * 0.5) * 2.0 - 1.0;
+	if (!ourside){
+		input[0] *= -1.0;
 	}
+	mSensitivityNet->Run(input, output);
+
+    return output[0];
 }
 

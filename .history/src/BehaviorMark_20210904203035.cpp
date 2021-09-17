@@ -78,8 +78,7 @@ void BehaviorMarkPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 {
 	Unum closest_opp = mPositionInfo.GetClosestOpponentToTeammate(mSelfState.GetUnum());
 	Unum closest_tm = mPositionInfo.GetClosestTeammateToOpponent(closest_opp);
-	
-	// if closest teammate to closest opponent is this player
+
 	if (closest_opp && closest_tm && closest_tm == mSelfState.GetUnum()) {
 		ActiveBehavior mark(mAgent, BT_Mark);
 

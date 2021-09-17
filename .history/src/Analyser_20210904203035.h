@@ -30,70 +30,36 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                *
  ************************************************************************************/
 
-#include "BehaviorMark.h"
-#include "VisualSystem.h"
-#include "Formation.h"
-#include "Dasher.h"
-#include "BasicCommand.h"
-#include "BehaviorPosition.h"
-#include "Agent.h"
-#include "PositionInfo.h"
-#include "Logger.h"
-#include "Evaluation.h"
+#ifndef ANALYSER_H_
+#define ANALYSER_H_
 
-const BehaviorType BehaviorMarkExecuter::BEHAVIOR_TYPE = BT_Mark;
+#include <vector>
+#include "Utilities.h"
+#include "Geometry.h"
+#include "ServerParam.h"
+#include "DecisionData.h"
+#include "InterceptInfo.h"
 
-namespace
-{
-bool ret = BehaviorExecutable::AutoRegister<BehaviorMarkExecuter>();
-}
+class Agent;
 
-BehaviorMarkExecuter::BehaviorMarkExecuter(Agent & agent) :
-	BehaviorExecuterBase<BehaviorDefenseData>(agent)
-{
-	Assert(ret);
-}
+/**
+ * 主要是防守需要使用的一些数据
+ * */
+class Analyser: public DecisionData {
+public:
+	Analyser(Agent & agent);
+	virtual ~Analyser();
 
-BehaviorMarkExecuter::~BehaviorMarkExecuter(void)
-{
-}
+	void UpdateRoutine();
 
-bool BehaviorMarkExecuter::Execute(const ActiveBehavior & beh)
-{
-	Logger::instance().LogGoToPoint(mSelfState.GetPos(), beh.mTarget, "@Mark");
+public:
+	/**
+	 * broadcast the position of ball & opponents
+	 */
+	void BroadcastPosition();
 
-	return Dasher::instance().GoToPoint(mAgent, beh.mTarget, beh.mBuffer, beh.mPower, false, false);
-}
+	Vector mLightHouse;
+	PlayerArray<Vector, true> mHome;
+};
 
-BehaviorMarkPlanner::BehaviorMarkPlanner(Agent & agent):
-	BehaviorPlannerBase<BehaviorDefenseData>( agent)
-{
-}
-
-BehaviorMarkPlanner::~BehaviorMarkPlanner()
-{
-}
-
-void BehaviorMarkPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
-{
-	Unum closest_opp = mPositionInfo.GetClosestOpponentToTeammate(mSelfState.GetUnum());
-	Unum closest_tm = mPositionInfo.GetClosestTeammateToOpponent(closest_opp);
-	
-	// if closest teammate to closest opponent is this player
-	if (closest_opp && closest_tm && closest_tm == mSelfState.GetUnum()) {
-		ActiveBehavior mark(mAgent, BT_Mark);
-
-		Vector ballPos = mBallState.GetPos();
-		AngleDeg b2o = (mBallState.GetPos()- mWorldState.GetOpponent(closest_opp).GetPos()).Dir();
-		mark.mBuffer = mSelfState.GetKickableArea();
-		mark.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower());
-		mark.mTarget = mWorldState.GetOpponent(closest_opp).GetPos()  + Polar2Vector(mark.mBuffer , b2o);
-		mark.mEvaluation = Evaluation::instance().EvaluatePosition(mark.mTarget, false);
-		if( mAgent.GetFormation().GetMyRole().mLineType == LT_Defender){
-			mark.mEvaluation = Evaluation::instance().EvaluatePosition(mark.mTarget, true);
-		}
-
-		behavior_list.push_back(mark);
-	}
-}
-
+#endif /* ANALYSER_H_ */

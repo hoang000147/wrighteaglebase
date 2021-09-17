@@ -134,7 +134,7 @@ void BehaviorPassPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 			}
 		}
 
-		// if min difference between target position and opponent position < 10 then skip this teammate, but why?
+		// if min difference between target position and opponent position < 10 then skip this teammate
 		if (min_differ < 10.0) continue;
 
 		pass.mEvaluation = Evaluation::instance().EvaluatePosition(pass.mTarget, true);
@@ -142,7 +142,7 @@ void BehaviorPassPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 		pass.mAngle = (pass.mTarget - mSelfState.GetPos()).Dir();
 		pass.mKickSpeed = ServerParam::instance().GetBallSpeed(5, pass.mTarget.Dist(mBallState.GetPos()));
 		pass.mKickSpeed = MinMax(2.0, pass.mKickSpeed, Kicker::instance().GetMaxSpeed(mAgent , pass.mAngle ,3 ));
-		if(oppClose){//in oppnent control, clear it. what does this mean?
+		if(oppClose){//in oppnent control, clear it
 			pass.mDetailType = BDT_Pass_Clear;
 		}
 		else pass.mDetailType = BDT_Pass_Direct;
@@ -150,13 +150,12 @@ void BehaviorPassPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 	}
 	if (!mActiveBehaviorList.empty()) {
 		mActiveBehaviorList.sort(std::greater<ActiveBehavior>());
-		if(mActiveBehaviorList.front().mDetailType == BDT_Pass_Clear){ // why?
+		if(mActiveBehaviorList.front().mDetailType == BDT_Pass_Clear){
 			mActiveBehaviorList.front().mEvaluation = 1.0 + FLOAT_EPS;
 		}
 		behavior_list.push_back(mActiveBehaviorList.front());
 	}
 	else {														//如果此周期没有好的动作
-		// just kick the ball randomly?
 		if (mAgent.IsLastActiveBehaviorInActOf(BT_Pass)) {
 			ActiveBehavior pass(mAgent, BT_Pass, BDT_Pass_Direct);
 			pass.mTarget = mAgent.GetLastActiveBehaviorInAct()->mTarget; //行为保持
@@ -165,8 +164,6 @@ void BehaviorPassPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 			pass.mKickSpeed = MinMax(2.0, pass.mKickSpeed, ServerParam::instance().ballSpeedMax());
 			behavior_list.push_back(pass);
 		}
-
-		// dont know what is this doing
 		if(oppClose){
 			Vector p;
 			BallState SimBall = mBallState;

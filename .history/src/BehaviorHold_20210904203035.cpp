@@ -84,7 +84,6 @@ void BehaviorHoldPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 {
 	if (!mSelfState.IsKickable()) return;
 	if (mSelfState.IsGoalie()) return;
-	// if in 1 or 2 cycles, the opponent can surely intercept the ball
 	if(mStrategy.GetSureOppInterCycle() <= 2 &&
 			mStrategy.GetSureOppInterCycle() != 0 ){
 
@@ -93,16 +92,13 @@ void BehaviorHoldPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 		Vector   		posAgent = mSelfState.GetPos();
 		PlayerState   objOpp = mWorldState.GetOpponent(mPositionInfo.GetClosestOpponentToBall());
 		Vector  	 	posOpp   = objOpp.GetPos();
-		dDist = (posOpp - posAgent).Mod(); // distance from opponent to current agent
+		dDist = (posOpp - posAgent).Mod();
 		AngleDeg      angOpp   = objOpp.GetBodyDir();
 		AngleDeg      ang      = 0.0;
 
-		// if distance < 5
 		if(dDist < 5 )
 		{
-			// set ang to angle of the agent looking to opponent
 			ang = ( posAgent - posOpp ).Dir();
-			// difference between opponent angle and current agent's angle > 0 then -1, else 1
 			int iSign = (GetNormalizeAngleDeg( angOpp - ang )) >0 ? -1:1;
 			ang +=  iSign*45 - mSelfState.GetBodyDir();
 			ang = GetNormalizeAngleDeg( ang );

@@ -165,8 +165,6 @@ void BehaviorPassPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 			pass.mKickSpeed = MinMax(2.0, pass.mKickSpeed, ServerParam::instance().ballSpeedMax());
 			behavior_list.push_back(pass);
 		}
-
-		// dont know what is this doing
 		if(oppClose){
 			Vector p;
 			BallState SimBall = mBallState;

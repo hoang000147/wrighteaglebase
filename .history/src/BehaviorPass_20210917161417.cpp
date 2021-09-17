@@ -156,7 +156,6 @@ void BehaviorPassPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 		behavior_list.push_back(mActiveBehaviorList.front());
 	}
 	else {														//如果此周期没有好的动作
-		// just kick the ball randomly?
 		if (mAgent.IsLastActiveBehaviorInActOf(BT_Pass)) {
 			ActiveBehavior pass(mAgent, BT_Pass, BDT_Pass_Direct);
 			pass.mTarget = mAgent.GetLastActiveBehaviorInAct()->mTarget; //行为保持
@@ -165,8 +164,6 @@ void BehaviorPassPlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 			pass.mKickSpeed = MinMax(2.0, pass.mKickSpeed, ServerParam::instance().ballSpeedMax());
 			behavior_list.push_back(pass);
 		}
-
-		// dont know what is this doing
 		if(oppClose){
 			Vector p;
 			BallState SimBall = mBallState;

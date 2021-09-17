@@ -132,7 +132,7 @@ void BehaviorPositionPlanner::Plan(ActiveBehaviorList &behavior_list)
 	}
 
 	// if target's X position = player's X position, set power to half
-	// else set power to full if the ball is ahead of striker or the ball is behind the defender (because they will need to chase the ball)
+	// else set power to full
 	if (position.mTarget.X()> mSelfState.GetPos().X() && mAgent.GetFormation().GetMyRole().mLineType == LT_Forward){
 		position.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower());
 	}

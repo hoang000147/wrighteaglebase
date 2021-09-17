@@ -122,7 +122,6 @@ void BehaviorShootPlanner::Plan(list<ActiveBehavior> & behavior_list)
 		AngleDeg right = (ServerParam::instance().oppRightGoalPost()- mSelfState.GetPos()).Dir();
 		Vector target ;
 		AngleDeg interval;
-		// goal line
 		Line c(ServerParam::instance().oppLeftGoalPost(),ServerParam::instance().oppRightGoalPost());
 		AngleDeg shootDir = mPositionInfo.GetShootAngle(left,right,mSelfState ,interval);
 		if(interval < mSelfState.GetRandAngle(ServerParam::instance().maxPower(),ServerParam::instance().ballSpeedMax(),mBallState)*3){

@@ -201,30 +201,22 @@ void BehaviorDribblePlanner::Plan(std::list<ActiveBehavior> & behavior_list)
 		if(!ServerParam::instance().pitchRectanglar().IsWithin(target)){
 			continue;
 		}
-
 		bool ok = true;
 		for (uint j = 0; j < opp2ball.size(); ++j) {
 			Vector rel_pos = mWorldState.GetOpponent(opp2ball[j]).GetPos() - target;
-			// if distance from this opponent < kickspeed * 12 
-			// OR opponent's position config (confidence?) < min valid conf
-			// set ok = false and break the loop
 			if (rel_pos.Mod() < dribble.mKickSpeed * 12 ||
 					mWorldState.GetOpponent(opp2ball[j]).GetPosConf() < PlayerParam::instance().minValidConf()){
 				ok = false;
 				break;
 			}
 		}
-		// if ok = false then skip this direction
 		if(!ok){
 			continue;
 		}
-
 		dribble.mEvaluation = 0;
-		// add the evaluations of position within the range of 1-8 kickspeed (kick the ball with the force between 1-8)
 		for (int i = 1; i <= 8; ++i) {
 			dribble.mEvaluation += Evaluation::instance().EvaluatePosition(mBallState.GetPos() + Polar2Vector(dribble.mKickSpeed * i, dribble.mAngle), true);
 		}
-		// take the average evaluation and set target
 		dribble.mEvaluation /= 8;
 		dribble.mTarget = target;
 

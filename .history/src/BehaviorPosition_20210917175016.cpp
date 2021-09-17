@@ -117,30 +117,22 @@ void BehaviorPositionPlanner::Plan(ActiveBehaviorList &behavior_list)
 		}
 	}
 
-	// if distance between closest opponent to target < 1.5, set Y position of target to a new one, probably between the opponents. Why?
 	Unum opp =mPositionInfo.GetClosestOpponentToPoint(position.mTarget);
 	if(mWorldState.GetOpponent(opp).GetPos().Dist(position.mTarget) < 1.5){
-		// closest opponent to the closest opponent (mentioned above) Y position > closest opponent X position
-		// why comparing Y and X position?
-		int p =mWorldState.GetOpponent(mPositionInfo.GetClosestOpponentToPlayer(opp)).GetPos().Y() > mWorldState.GetOpponent(opp).GetPos().X() ? -1:1;
-		position.mTarget.SetY(target.Y() + p * 2);
+			int p =mWorldState.GetOpponent(mPositionInfo.GetClosestOpponentToPlayer(opp)).GetPos().Y() > mWorldState.GetOpponent(opp).GetPos().X() ? -1:1;
+			position.mTarget.SetY(target.Y() + p * 2);
 	}
 
-	// if opponent's offside line > ball position, set target to min of (target X position, opponent's offside line)
 	if(mPositionInfo.GetOpponentOffsideLine() > mBallState.GetPos().X()){
 		position.mTarget.SetX(Min(target.X(),(mPositionInfo.GetOpponentOffsideLine())));
 	}
-
-	// if target's X position = player's X position, set power to half
-	// else set power to full if the ball is ahead of striker or the ball is behind the defender (because they will need to chase the ball)
-	if (position.mTarget.X()> mSelfState.GetPos().X() && mAgent.GetFormation().GetMyRole().mLineType == LT_Forward){
+	if(position.mTarget.X()> mSelfState.GetPos().X() && mAgent.GetFormation().GetMyRole().mLineType == LT_Forward){
+	position.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower());
+	}
+	else 	if(position.mTarget.X()< mSelfState.GetPos().X() && mAgent.GetFormation().GetMyRole().mLineType == LT_Defender){
 		position.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower());
 	}
-	else if(position.mTarget.X()< mSelfState.GetPos().X() && mAgent.GetFormation().GetMyRole().mLineType == LT_Defender){
-		position.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower());
-	}
-	else 
-		position.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower())/2;
+	else position.mPower = mSelfState.CorrectDashPowerForStamina(ServerParam::instance().maxDashPower())/2;
 	position.mEvaluation = Evaluation::instance().EvaluatePosition(position.mTarget, false);
 
 	behavior_list.push_back(position);
